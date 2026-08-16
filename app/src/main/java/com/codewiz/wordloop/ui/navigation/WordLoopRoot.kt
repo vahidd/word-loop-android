@@ -138,7 +138,17 @@ fun WordLoopRoot(
         }
     }
 
-    CompositionLocalProvider(LocalAppLanguageCode provides languageCode) {
+    val uiLanguage = AppUiLanguage.from(languageCode) ?: AppUiLanguage.fromSystemPreferred()
+    val baseContext = LocalContext.current
+    val localizedContext = remember(uiLanguage) {
+        val config = android.content.res.Configuration(baseContext.resources.configuration)
+        config.setLocale(uiLanguage.locale)
+        baseContext.createConfigurationContext(config)
+    }
+    CompositionLocalProvider(
+        LocalAppLanguageCode provides languageCode,
+        androidx.compose.ui.platform.LocalContext provides localizedContext,
+    ) {
         when {
             checking -> {
                 Box(Modifier.fillMaxSize()) {

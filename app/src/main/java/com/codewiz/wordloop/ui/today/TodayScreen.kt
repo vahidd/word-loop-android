@@ -66,6 +66,7 @@ fun TodayScreen(
     val mastered = words.count { it.wordStatus == WordStatus.MASTERED }
 
     LaunchedEffect(Unit) {
+        store.loadSuggestions()
         while (true) {
             delay(60_000)
             store.refreshAll()
