@@ -1,0 +1,7 @@
+-keepattributes SourceFile,LineNumberTable
+-keepattributes *Annotation*
+-keep class com.codewiz.wordloop.domain.model.** { *; }
+-keep class com.codewiz.wordloop.data.api.** { *; }
+-dontwarn org.bouncycastle.**
+-dontwarn org.conscrypt.**
+-dontwarn org.openjsse.**

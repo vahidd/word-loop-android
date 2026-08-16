@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "113431763950",
+    "firebase_url": "https://word-loop-c1f08-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "word-loop-c1f08",
+    "storage_bucket": "word-loop-c1f08.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:113431763950:android:e764c062a28147b5c24cff",
+        "android_client_info": {
+          "package_name": "com.codewiz.wordloop"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "113431763950-7up6s63us1cm6r40c92mbbko8phhefla.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDi9GcguHPNWX_dJFYVULR1rMz5qJL9m8I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "113431763950-7up6s63us1cm6r40c92mbbko8phhefla.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "113431763950-adui83eg82cn8d69sun96uv629c1ce30.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.codewiz.WordLoop"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
