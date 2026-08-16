@@ -74,6 +74,7 @@ fun WordDetailScreen(
     onPractice: (LearnedWord) -> Unit,
     showDone: Boolean = false,
     onDone: (() -> Unit)? = null,
+    onBack: (() -> Unit)? = null,
 ) {
     val words by store.words.collectAsState()
     val wordList = list.ifEmpty { listOf(initial) }
@@ -93,6 +94,23 @@ fun WordDetailScreen(
                 Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(tr("Word Added"), fontWeight = FontWeight.SemiBold)
                     TextButton(onClick = onDone) { Text(tr("Done")) }
+                }
+            } else if (onBack != null) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                        contentDescription = tr("Back"),
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .clickable(onClick = onBack)
+                            .padding(6.dp),
+                    )
                 }
             }
             Column(

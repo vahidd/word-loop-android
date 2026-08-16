@@ -194,6 +194,7 @@ fun WordLoopRoot(
                             },
                             showDone = dest.added,
                             onDone = { destination = Destination.Tabs },
+                            onBack = { destination = Destination.Tabs },
                         )
                     }
                     Destination.Tabs -> {

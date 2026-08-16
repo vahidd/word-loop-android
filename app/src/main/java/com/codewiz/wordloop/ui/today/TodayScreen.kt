@@ -1,6 +1,7 @@
 package com.codewiz.wordloop.ui.today
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -163,8 +164,10 @@ private fun ReviewHero(dueCount: Int, streak: Int, onStart: () -> Unit) {
 
 @Composable
 fun BoxWithBackground(content: @Composable () -> Unit) {
-    androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().statusBarsPadding()) {
+    Box(Modifier.fillMaxSize()) {
         ScreenBackground()
-        content()
+        Box(Modifier.fillMaxSize().statusBarsPadding()) {
+            content()
+        }
     }
 }

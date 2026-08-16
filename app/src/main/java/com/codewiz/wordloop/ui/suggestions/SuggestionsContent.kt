@@ -21,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,12 +50,12 @@ fun SuggestionsContent(
     style: SuggestionsStyle,
     onAdded: ((LearnedWord) -> Unit)? = null,
 ) {
-    val profile = store.userProfile.value
+    val profile by store.userProfile.collectAsState()
     val languages = profile?.learningLanguages.orEmpty()
     var selected by remember { mutableStateOf(languages.firstOrNull().orEmpty()) }
-    val suggestions = store.suggestions.value
-    val loading = store.isLoadingSuggestions.value
-    val words = store.words.value
+    val suggestions by store.suggestions.collectAsState()
+    val loading by store.isLoadingSuggestions.collectAsState()
+    val words by store.words.collectAsState()
     val scope = rememberCoroutineScope()
     var adding by remember { mutableStateOf(setOf<String>()) }
     var added by remember { mutableStateOf(setOf<String>()) }
