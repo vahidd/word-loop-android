@@ -134,8 +134,15 @@ fun SettingsScreen(
                     GradientHero {
                         Text(tr("Guest"), color = Color.White, fontWeight = FontWeight.Bold)
                         Text("Create an account to save your words and sync across devices.", color = Color.White.copy(alpha = 0.85f))
-                        TextButton(onClick = onUpgrade) {
-                            Text(tr("Create Free Account"), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                        androidx.compose.material3.Button(
+                            onClick = onUpgrade,
+                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                containerColor = Color.White,
+                                contentColor = MaterialTheme.colorScheme.primary,
+                            ),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(tr("Create Free Account"), fontWeight = FontWeight.Bold)
                         }
                     }
                 } else {

@@ -199,7 +199,11 @@ fun WordLoopRoot(
                                 )
                             },
                         ) { padding ->
-                            Box(Modifier.fillMaxSize().padding(bottom = padding.calculateBottomPadding())) {
+                            Box(
+                                Modifier
+                                    .fillMaxSize()
+                                    .padding(top = padding.calculateTopPadding()),
+                            ) {
                                 when (tab) {
                                     AppTab.TODAY -> TodayScreen(
                                         store = deps.store,

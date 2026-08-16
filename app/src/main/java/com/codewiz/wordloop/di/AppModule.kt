@@ -114,17 +114,18 @@ class AuthHeaderInterceptor(
     private val json: Json,
 ) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
-        val token = runBlocking { authRepository.currentIdToken() }
-            ?: throw ApiError.Unauthorized
-        val authorized = chain.request().newBuilder()
-            .header("Authorization", "Bearer $token")
+        val token = runBlocking { runCatching { authRepository.currentIdToken() }.getOrNull() }
+        val builder = chain.request().newBuilder()
             .header("Content-Type", "application/json")
-            .build()
+        if (token != null) {
+            builder.header("Authorization", "Bearer $token")
+        }
+        val authorized = builder.build()
         val response = chain.proceed(authorized)
-        if (response.code != 401) return response
+        if (response.code != 401 || token == null) return response
         response.close()
-        val fresh = runBlocking { authRepository.currentIdToken(forceRefresh = true) }
-            ?: throw ApiError.Unauthorized
+        val fresh = runBlocking { runCatching { authRepository.currentIdToken(forceRefresh = true) }.getOrNull() }
+            ?: return chain.proceed(authorized)
         val retried = authorized.newBuilder()
             .header("Authorization", "Bearer $fresh")
             .build()

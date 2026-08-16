@@ -18,5 +18,11 @@ fun tr(english: String, vararg args: Any): String {
         0
     }
     val raw = if (resId != 0) context.getString(resId) else english
-    return if (args.isEmpty()) raw else raw.format(*args)
+    val normalized = normalizeIosFormat(raw)
+    return if (args.isEmpty()) normalized else runCatching {
+        normalized.format(*args)
+    }.getOrDefault(normalized)
 }
+
+fun normalizeIosFormat(template: String): String =
+    template.replace("%@", "%s").replace("%lld", "%d")

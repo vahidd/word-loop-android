@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -161,7 +162,7 @@ private fun ReviewHero(dueCount: Int, streak: Int, onStart: () -> Unit) {
 
 @Composable
 fun BoxWithBackground(content: @Composable () -> Unit) {
-    androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
+    androidx.compose.foundation.layout.Box(Modifier.fillMaxSize().statusBarsPadding()) {
         ScreenBackground()
         content()
     }
