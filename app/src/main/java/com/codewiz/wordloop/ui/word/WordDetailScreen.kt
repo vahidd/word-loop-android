@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -121,7 +122,9 @@ fun WordDetailScreen(
                     .padding(bottom = 80.dp),
                 verticalArrangement = Arrangement.spacedBy(WlDesign.sectionSpacing),
             ) {
-                Text(display.word, fontSize = 34.sp, fontWeight = FontWeight.Bold)
+                SelectionContainer {
+                    Text(display.word, fontSize = 34.sp, fontWeight = FontWeight.Bold)
+                }
                 Column(
                     Modifier
                         .fillMaxWidth()
@@ -170,8 +173,12 @@ fun WordDetailScreen(
                     }
                 }
                 SectionCard(tr("Meaning")) {
-                    Text(display.shortMeaning, fontWeight = FontWeight.Medium)
-                    Text(display.detailedMeaning, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                    SelectionContainer {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(display.shortMeaning, fontWeight = FontWeight.Medium)
+                            Text(display.detailedMeaning, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                        }
+                    }
                 }
                 if (display.otherMeanings.isNotEmpty()) {
                     SectionCard(tr("Other Meanings")) {

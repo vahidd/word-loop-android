@@ -12,4 +12,12 @@ class QuizSkipIndexTest {
         assertThat(QuizViewModel.wrongOptionIndex(3)).isEqualTo(0)
         assertThat(QuizViewModel.wrongOptionIndex(0)).isNotEqualTo(0)
     }
+
+    @Test
+    fun summaryTitleFollowsAccuracyBands() {
+        assertThat(QuizViewModel.resultTitle(4, 5)).isEqualTo("Excellent!")
+        assertThat(QuizViewModel.resultTitle(3, 5)).isEqualTo("Good job!")
+        assertThat(QuizViewModel.resultTitle(1, 5)).isEqualTo("Keep practicing!")
+        assertThat(QuizViewModel.resultTitle(0, 0)).isEqualTo("Keep practicing!")
+    }
 }

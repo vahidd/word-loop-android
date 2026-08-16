@@ -75,7 +75,7 @@ fun SuggestionsContent(
         suggestions[language].orEmpty().any { !owned(it, language) || key(it.word, language) in added }
     }
 
-    if (style == SuggestionsStyle.SECTION && (loading || !hasAnything)) return
+    if (style == SuggestionsStyle.SECTION && !loading && !hasAnything) return
 
     Column(verticalArrangement = Arrangement.spacedBy(WlDesign.sectionSpacing)) {
         if (style == SuggestionsStyle.ONBOARDING) {
@@ -102,8 +102,16 @@ fun SuggestionsContent(
             }
         }
         when {
-            loading && style == SuggestionsStyle.ONBOARDING -> Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            loading -> Column(
+                Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 CircularProgressIndicator()
+                Text(
+                    tr("Finding the best words for you…"),
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
+                )
             }
             visible.isEmpty() -> Text(
                 if (style == SuggestionsStyle.ONBOARDING) "No suggestions right now."

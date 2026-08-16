@@ -315,15 +315,26 @@ private fun FeedbackSheet(
                 .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f))
                 .align(Alignment.CenterHorizontally),
         )
-        Text(
-            when {
-                isCorrect -> "Correct"
-                didSkip -> "Skipped"
-                else -> "Not quite"
-            },
-            fontWeight = FontWeight.Bold,
-            color = if (isCorrect) Color(0xFF34C759) else OrangeAccent,
-        )
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                when {
+                    isCorrect -> "Nice work!"
+                    didSkip -> "No worries!"
+                    else -> "Not quite"
+                },
+                fontWeight = FontWeight.Bold,
+                color = if (isCorrect) Color(0xFF34C759) else OrangeAccent,
+            )
+            Text(
+                when {
+                    isCorrect -> "You nailed this one."
+                    didSkip -> "Here's what to learn."
+                    else -> "Here's what to remember."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
+            )
+        }
         Text(explanation, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
         Button(
             onClick = onContinue,
@@ -355,7 +366,12 @@ private fun QuizSummary(
     onOpenWord: (LearnedWord) -> Unit,
 ) {
     val result = state.result
-    val color = if (result.correctCount >= result.totalQuestions / 2) Color(0xFF34C759) else OrangeAccent
+    val ratio = if (result.totalQuestions == 0) 0.0 else result.correctCount.toDouble() / result.totalQuestions
+    val color = when {
+        ratio >= 0.8 -> Color(0xFFFFCC00)
+        ratio >= 0.5 -> Color(0xFF007AFF)
+        else -> MaterialTheme.colorScheme.primary
+    }
     Column(
         Modifier
             .fillMaxSize()
@@ -376,9 +392,16 @@ private fun QuizSummary(
                 .background(Brush.linearGradient(listOf(color, color.copy(alpha = 0.7f))))
                 .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color.White, modifier = Modifier.size(56.dp))
-            Text("${result.correctCount} of ${result.totalQuestions} correct", color = Color.White)
+            Text(
+                QuizViewModel.resultTitle(result.correctCount, result.totalQuestions),
+                color = Color.White,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+            )
+            Text("${result.correctCount} of ${result.totalQuestions} correct", color = Color.White.copy(alpha = 0.85f))
         }
         val metrics = buildList {
             add(Metric("${result.correctCount}", "Correct", Icons.Default.CheckCircle, Color(0xFF34C759)))

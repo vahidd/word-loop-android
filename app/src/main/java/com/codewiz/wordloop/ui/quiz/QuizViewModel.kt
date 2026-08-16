@@ -163,6 +163,15 @@ class QuizViewModel @Inject constructor(
     companion object {
         fun wrongOptionIndex(correctOptionIndex: Int): Int =
             if (correctOptionIndex == 0) 1 else 0
+
+        fun resultTitle(correctCount: Int, totalQuestions: Int): String {
+            val ratio = if (totalQuestions <= 0) 0.0 else correctCount.toDouble() / totalQuestions
+            return when {
+                ratio >= 0.8 -> "Excellent!"
+                ratio >= 0.5 -> "Good job!"
+                else -> "Keep practicing!"
+            }
+        }
     }
 
     private suspend fun submit(item: QuizItem, index: Int) {
