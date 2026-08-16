@@ -63,6 +63,7 @@ fun TodayScreen(
     val words by store.words.collectAsState()
     val due by store.dueWords.collectAsState()
     val progress by store.progress.collectAsState()
+    val loading by store.isLoading.collectAsState()
     val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
     val mastered = words.count { it.wordStatus == WordStatus.MASTERED }
 
@@ -81,7 +82,7 @@ fun TodayScreen(
                 start = WlDesign.screenPadding,
                 end = WlDesign.screenPadding,
                 top = 8.dp,
-                bottom = 120.dp,
+                bottom = 24.dp,
             ),
             verticalArrangement = Arrangement.spacedBy(WlDesign.sectionSpacing),
         ) {
@@ -104,6 +105,12 @@ fun TodayScreen(
                         icon = Icons.Default.CheckCircle,
                         accent = Color(0xFF34C759),
                     )
+                    loading && words.isEmpty() -> Box(
+                        Modifier.fillMaxWidth().padding(vertical = 32.dp),
+                        contentAlignment = androidx.compose.ui.Alignment.Center,
+                    ) {
+                        androidx.compose.material3.CircularProgressIndicator()
+                    }
                     else -> GradientHero {
                         Text(tr("Your library is empty"), color = Color.White.copy(alpha = 0.9f), fontWeight = FontWeight.SemiBold)
                         Text(tr("Ready to start learning?"), color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
@@ -163,10 +170,17 @@ private fun ReviewHero(dueCount: Int, streak: Int, onStart: () -> Unit) {
 }
 
 @Composable
-fun BoxWithBackground(content: @Composable () -> Unit) {
+fun BoxWithBackground(
+    applyStatusBars: Boolean = true,
+    content: @Composable () -> Unit,
+) {
     Box(Modifier.fillMaxSize()) {
         ScreenBackground()
-        Box(Modifier.fillMaxSize().statusBarsPadding()) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .then(if (applyStatusBars) Modifier.statusBarsPadding() else Modifier),
+        ) {
             content()
         }
     }

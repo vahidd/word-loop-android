@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import com.codewiz.wordloop.data.store.WordLoopStore
 import com.codewiz.wordloop.domain.model.LearnedWord
 import com.codewiz.wordloop.domain.model.WordSuggestion
+import com.codewiz.wordloop.ui.components.EmptyStateCard
 import com.codewiz.wordloop.ui.components.FilterChip
 import com.codewiz.wordloop.ui.components.SectionHeader
 import com.codewiz.wordloop.ui.theme.WlDesign
@@ -59,6 +60,7 @@ fun SuggestionsContent(
     val scope = rememberCoroutineScope()
     var adding by remember { mutableStateOf(setOf<String>()) }
     var added by remember { mutableStateOf(setOf<String>()) }
+    var addError by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(languages) {
         if (selected.isEmpty() || selected !in languages) selected = languages.firstOrNull().orEmpty()
@@ -113,8 +115,14 @@ fun SuggestionsContent(
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
                 )
             }
+            visible.isEmpty() && current.isEmpty() && !hasAnything -> EmptyStateCard(
+                title = tr("No suggestions available"),
+                message = tr("Could not load suggestions right now. You can still add words using the + button."),
+                icon = Icons.Default.Add,
+                accent = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+            )
             visible.isEmpty() -> Text(
-                if (style == SuggestionsStyle.ONBOARDING) "No suggestions right now."
+                if (style == SuggestionsStyle.ONBOARDING) tr("No suggestions right now.")
                 else tr("You've added all suggestions for this language."),
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
             )
@@ -126,16 +134,21 @@ fun SuggestionsContent(
                 onAdd = { suggestion ->
                     val chip = key(suggestion.word, selected)
                     adding = adding + chip
+                    addError = null
                     scope.launch {
                         runCatching { store.createWord(suggestion.word, selected) }
                             .onSuccess { created ->
                                 added = added + chip
                                 onAdded?.invoke(created)
                             }
+                            .onFailure { addError = it.message ?: "Couldn't add that word. Try again." }
                         adding = adding - chip
                     }
                 },
             )
+        }
+        addError?.let {
+            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
         }
     }
 }

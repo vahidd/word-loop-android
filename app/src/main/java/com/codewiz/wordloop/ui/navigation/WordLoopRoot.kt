@@ -25,7 +25,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.codewiz.wordloop.data.audio.PronunciationPlayer
 import com.codewiz.wordloop.data.prefs.UserPrefs
@@ -58,7 +60,12 @@ import kotlinx.coroutines.launch
 
 private sealed interface Destination {
     data object Tabs : Destination
-    data class Detail(val word: LearnedWord, val list: List<LearnedWord>, val added: Boolean = false) : Destination
+    data class Detail(
+        val word: LearnedWord,
+        val list: List<LearnedWord>,
+        val added: Boolean = false,
+        val returnTo: Destination? = null,
+    ) : Destination
     data class Quiz(val words: List<LearnedWord>, val mode: com.codewiz.wordloop.ui.quiz.QuizViewModel.Mode) : Destination
 }
 
@@ -72,6 +79,7 @@ fun WordLoopRoot(
     quizViewModel: QuizViewModel = hiltViewModel(),
 ) {
     val activity = LocalContext.current as Activity
+    val focusManager = LocalFocusManager.current
     val app = activity.application
     val deps = remember {
         EntryPointAccessors.fromApplication(app, RootDeps::class.java)
@@ -131,23 +139,16 @@ fun WordLoopRoot(
         if (pendingReview) {
             runCatching {
                 val manager = ReviewManagerFactory.create(activity)
-                val info = manager.requestReviewFlow()
-                // Best-effort; Play review requires a published listing.
+                manager.requestReviewFlow().addOnSuccessListener { info ->
+                    manager.launchReviewFlow(activity, info)
+                }
             }
             deps.reviewRequests.clearPendingRequest()
         }
     }
 
-    val uiLanguage = AppUiLanguage.from(languageCode) ?: AppUiLanguage.fromSystemPreferred()
-    val baseContext = LocalContext.current
-    val localizedContext = remember(uiLanguage) {
-        val config = android.content.res.Configuration(baseContext.resources.configuration)
-        config.setLocale(uiLanguage.locale)
-        baseContext.createConfigurationContext(config)
-    }
     CompositionLocalProvider(
         LocalAppLanguageCode provides languageCode,
-        androidx.compose.ui.platform.LocalContext provides localizedContext,
     ) {
         when {
             checking -> {
@@ -169,19 +170,27 @@ fun WordLoopRoot(
             )
             else -> {
                 when (val dest = destination) {
-                    is Destination.Quiz -> QuizScreen(
-                        words = dest.words,
-                        mode = dest.mode,
-                        viewModel = quizViewModel,
-                        player = deps.player,
-                        onClose = {
+                    is Destination.Quiz -> {
+                        BackHandler {
                             destination = Destination.Tabs
                             scope.launch { deps.store.refreshAll() }
-                        },
-                        onOpenWord = { word -> destination = Destination.Detail(word, listOf(word)) },
-                    )
+                        }
+                        QuizScreen(
+                            words = dest.words,
+                            mode = dest.mode,
+                            viewModel = quizViewModel,
+                            player = deps.player,
+                            onClose = {
+                                destination = Destination.Tabs
+                                scope.launch { deps.store.refreshAll() }
+                            },
+                            onOpenWord = { word ->
+                                destination = Destination.Detail(word, listOf(word), returnTo = dest)
+                            },
+                        )
+                    }
                     is Destination.Detail -> {
-                        BackHandler { destination = Destination.Tabs }
+                        BackHandler { destination = dest.returnTo ?: Destination.Tabs }
                         WordDetailScreen(
                             initial = dest.word,
                             list = dest.list,
@@ -193,17 +202,22 @@ fun WordLoopRoot(
                                 destination = Destination.Quiz(listOf(word), QuizViewModel.Mode.PRACTICE)
                             },
                             showDone = dest.added,
-                            onDone = { destination = Destination.Tabs },
-                            onBack = { destination = Destination.Tabs },
+                            onDone = { destination = dest.returnTo ?: Destination.Tabs },
+                            onBack = { destination = dest.returnTo ?: Destination.Tabs },
                         )
                     }
                     Destination.Tabs -> {
+                        BackHandler(enabled = tab != AppTab.TODAY) { tab = AppTab.TODAY }
                         Scaffold(
                             bottomBar = {
                                 WordLoopTabBar(
                                     selected = tab,
-                                    onSelect = { tab = it },
+                                    onSelect = {
+                                        focusManager.clearFocus()
+                                        tab = it
+                                    },
                                     onAdd = {
+                                        focusManager.clearFocus()
                                         scope.launch { addWordViewModel.prepare() }
                                         showAdd = true
                                     },
@@ -213,7 +227,11 @@ fun WordLoopRoot(
                             Box(
                                 Modifier
                                     .fillMaxSize()
-                                    .padding(top = padding.calculateTopPadding()),
+                                    .padding(
+                                        top = padding.calculateTopPadding(),
+                                        bottom = padding.calculateBottomPadding(),
+                                    )
+                                    .clipToBounds(),
                             ) {
                                 when (tab) {
                                     AppTab.TODAY -> TodayScreen(
@@ -296,6 +314,7 @@ fun WordLoopRoot(
                                     destination = Destination.Quiz(listOf(word), QuizViewModel.Mode.PRACTICE)
                                 },
                                 showDone = true,
+                                applyStatusBars = false,
                                 onDone = {
                                     showAdd = false
                                     addWordViewModel.reset()
@@ -339,7 +358,10 @@ fun WordLoopRoot(
                 }
 
                 if (languagePicker != null) {
-                    ModalBottomSheet(onDismissRequest = { languagePicker = null }) {
+                    ModalBottomSheet(onDismissRequest = {
+                        languagePicker = null
+                        pickerSearch = ""
+                    }) {
                         val current = profile?.learningLanguages.orEmpty()
                         LanguagePicker(
                             title = if (languagePicker == "learning") "Word Languages" else "Your native language",

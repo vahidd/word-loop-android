@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -40,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
@@ -74,6 +76,7 @@ fun WordDetailScreen(
     userId: String?,
     onPractice: (LearnedWord) -> Unit,
     showDone: Boolean = false,
+    applyStatusBars: Boolean = true,
     onDone: (() -> Unit)? = null,
     onBack: (() -> Unit)? = null,
 ) {
@@ -89,8 +92,12 @@ fun WordDetailScreen(
 
     LaunchedEffect(Unit) { reviewRequests.recordWordDetailViewed() }
 
-    BoxWithBackground {
-        Column(Modifier.fillMaxSize()) {
+    BoxWithBackground(applyStatusBars = applyStatusBars) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .then(if (applyStatusBars) Modifier.navigationBarsPadding() else Modifier),
+        ) {
             if (showDone && onDone != null) {
                 Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(tr("Word Added"), fontWeight = FontWeight.SemiBold)
@@ -117,9 +124,10 @@ fun WordDetailScreen(
             Column(
                 Modifier
                     .weight(1f)
+                    .clipToBounds()
                     .verticalScroll(rememberScrollState())
                     .padding(WlDesign.screenPadding)
-                    .padding(bottom = 80.dp),
+                    .padding(bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(WlDesign.sectionSpacing),
             ) {
                 SelectionContainer {
@@ -274,13 +282,13 @@ fun WordDetailScreen(
                 ) {
                     Icon(
                         Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                        contentDescription = tr("Back"),
+                        contentDescription = tr("Previous"),
                         modifier = Modifier.clickable(enabled = index > 0) { if (index > 0) index-- },
                     )
                     Text("${index + 1}/${wordList.size}", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f))
                     Icon(
                         Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = null,
+                        contentDescription = tr("Next"),
                         modifier = Modifier.clickable(enabled = index < wordList.lastIndex) { if (index < wordList.lastIndex) index++ },
                     )
                 }

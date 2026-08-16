@@ -44,6 +44,16 @@ class ApiErrorTest {
     }
 
     @Test
+    fun suggestionFallsBackToDidYouMeanInMessage() {
+        val fromMessage = ApiError.suggestionFrom(
+            explicit = null,
+            message = "We couldn't find \"helo\" in English. Did you mean \"hello\"?",
+        )
+        assertThat(fromMessage).isEqualTo("hello")
+        assertThat(ApiError.suggestionFrom("hi", "Did you mean \"hello\"?")).isEqualTo("hi")
+    }
+
+    @Test
     fun aiFailureIsRetryable() {
         val error = ApiError.fromBody(502, ApiErrorBody(error = ApiErrorDetail(message = "down")))
         assertThat(error).isInstanceOf(ApiError.AiGenerationFailed::class.java)

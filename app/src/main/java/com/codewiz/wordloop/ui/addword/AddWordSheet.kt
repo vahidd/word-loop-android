@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -62,6 +63,12 @@ fun AddWordContent(
     onRegenerate: (LearnedWord) -> Unit,
     onCancelExisting: () -> Unit,
 ) {
+    val keyboard = LocalSoftwareKeyboardController.current
+    LaunchedEffect(state.unrecognizedWord, state.existingSenses, state.isLoading) {
+        if (!state.isLoading && (state.unrecognizedWord != null || state.existingSenses.isNotEmpty())) {
+            keyboard?.hide()
+        }
+    }
     Box {
         Column(
             Modifier
@@ -162,21 +169,11 @@ fun AddWordContent(
                         }
                     }
                     state.unrecognizedWord?.let { unrecognized ->
-                        Column(
-                            Modifier
-                                .fillMaxWidth()
-                                .clip(WlDesign.cardShape)
-                                .background(MaterialTheme.colorScheme.surface)
-                                .padding(14.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Text("We couldn't find “${unrecognized.attemptedWord}”.")
-                            unrecognized.suggestion?.let { suggestion ->
-                                TextButton(onClick = onUseSuggestion) {
-                                    Text("Did you mean $suggestion?")
-                                }
-                            }
-                        }
+                        UnrecognizedCard(
+                            unrecognized = unrecognized,
+                            isLoading = state.isLoading,
+                            onUseSuggestion = onUseSuggestion,
+                        )
                     }
                     state.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 }
@@ -216,5 +213,46 @@ private fun ExistingSenses(
             }
         }
         TextButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) { Text(tr("Cancel")) }
+    }
+}
+
+@Composable
+private fun UnrecognizedCard(
+    unrecognized: UnrecognizedWord,
+    isLoading: Boolean,
+    onUseSuggestion: () -> Unit,
+) {
+    val suggestion = unrecognized.suggestion
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(WlDesign.cardShape)
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Text(
+            tr("Couldn't find \"%@\"", unrecognized.attemptedWord),
+            fontWeight = FontWeight.SemiBold,
+        )
+        Text(
+            if (!suggestion.isNullOrBlank()) {
+                tr("This doesn't look like a word in %@. Did you mean this instead?", unrecognized.language)
+            } else {
+                tr("This doesn't look like a word in %@. Check the spelling and try again.", unrecognized.language)
+            },
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+            style = MaterialTheme.typography.bodySmall,
+        )
+        if (!suggestion.isNullOrBlank()) {
+            Button(
+                onClick = onUseSuggestion,
+                enabled = !isLoading,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+            ) {
+                Text("Use “$suggestion”", fontWeight = FontWeight.SemiBold)
+            }
+        }
     }
 }

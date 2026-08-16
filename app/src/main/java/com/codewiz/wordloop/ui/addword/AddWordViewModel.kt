@@ -20,6 +20,7 @@ data class UnrecognizedWord(
     val attemptedWord: String,
     val language: String,
     val suggestion: String?,
+    val message: String,
 )
 
 data class AddWordUiState(
@@ -114,7 +115,12 @@ class AddWordViewModel @Inject constructor(
         } catch (error: ApiError.WordNotRecognized) {
             _state.update {
                 it.copy(
-                    unrecognizedWord = UnrecognizedWord(word, language, error.suggestion),
+                    unrecognizedWord = UnrecognizedWord(
+                        attemptedWord = word,
+                        language = language,
+                        suggestion = ApiError.suggestionFrom(error.suggestion, error.detail),
+                        message = error.detail,
+                    ),
                 )
             }
         } catch (error: ApiError.Server) {

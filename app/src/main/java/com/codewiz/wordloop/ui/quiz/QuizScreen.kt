@@ -14,8 +14,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -78,66 +80,84 @@ fun QuizScreen(
 
     Box(Modifier.fillMaxSize()) {
         ScreenBackground()
-        when (state.phase) {
-            QuizViewModel.Phase.SUMMARY -> QuizSummary(state, onClose, onOpenWord)
-            else -> {
-                val item = state.currentItem
-                if (item == null) {
-                    EmptyStateCard(
-                        title = tr("No quizzes available"),
-                        message = "These words don't have quiz data yet.",
-                        icon = Icons.Default.FrontHand,
-                        accent = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                    )
-                } else {
-                    Column(Modifier.fillMaxSize()) {
-                        QuizHeader(
-                            current = state.currentIndex,
-                            total = state.items.size,
-                            progress = state.progressFraction,
-                            onClose = onClose,
+        Box(
+            Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding(),
+        ) {
+            when (state.phase) {
+                QuizViewModel.Phase.SUMMARY -> QuizSummary(state, onClose, onOpenWord)
+                else -> {
+                    val item = state.currentItem
+                    if (item == null) {
+                        EmptyStateCard(
+                            title = tr("No quizzes available"),
+                            message = tr("These words don't have quiz data yet."),
+                            icon = Icons.Default.FrontHand,
+                            accent = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                         )
-                        Column(
-                            Modifier
-                                .weight(1f)
-                                .verticalScroll(rememberScrollState())
-                                .padding(WlDesign.screenPadding)
-                                .padding(bottom = if (state.phase == QuizViewModel.Phase.SHOWING_FEEDBACK) 220.dp else 32.dp),
-                            verticalArrangement = Arrangement.spacedBy(20.dp),
-                        ) {
-                            QuizHero(item, onPronounce = { player.play(item.word) })
-                            Text("Choose your answer", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f), fontWeight = FontWeight.SemiBold)
-                            item.quiz.options.forEachIndexed { index, option ->
-                                AnswerOption(
-                                    letter = letters.getOrElse(index) { "${index + 1}" },
-                                    text = option,
-                                    state = answerState(state, item, index),
-                                    enabled = state.phase == QuizViewModel.Phase.ANSWERING,
-                                    onClick = { scope.launch { viewModel.selectAnswer(index) } },
+                    } else {
+                        Column(Modifier.fillMaxSize()) {
+                            state.errorMessage?.let { message ->
+                                Text(
+                                    message,
+                                    color = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.padding(horizontal = WlDesign.screenPadding, vertical = 8.dp),
                                 )
                             }
-                            TextButton(
-                                onClick = { scope.launch { viewModel.skipAnswer() } },
-                                enabled = state.phase == QuizViewModel.Phase.ANSWERING,
-                                modifier = Modifier.fillMaxWidth(),
+                            QuizHeader(
+                                current = state.currentIndex,
+                                total = state.items.size,
+                                progress = state.progressFraction,
+                                onClose = onClose,
+                            )
+                            Column(
+                                Modifier
+                                    .weight(1f)
+                                    .verticalScroll(rememberScrollState())
+                                    .padding(WlDesign.screenPadding)
+                                    .padding(bottom = if (state.phase == QuizViewModel.Phase.SHOWING_FEEDBACK) 220.dp else 32.dp),
+                                verticalArrangement = Arrangement.spacedBy(20.dp),
                             ) {
-                                Icon(Icons.Default.PanTool, contentDescription = null)
-                                Text(tr("I don't know"), modifier = Modifier.padding(start = 8.dp))
+                                QuizHero(item, onPronounce = { player.play(item.word) })
+                                Text(
+                                    tr("Choose your answer"),
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                                item.quiz.options.forEachIndexed { index, option ->
+                                    AnswerOption(
+                                        letter = letters.getOrElse(index) { "${index + 1}" },
+                                        text = option,
+                                        state = answerState(state, item, index),
+                                        enabled = state.phase == QuizViewModel.Phase.ANSWERING,
+                                        onClick = { scope.launch { viewModel.selectAnswer(index) } },
+                                    )
+                                }
+                                TextButton(
+                                    onClick = { scope.launch { viewModel.skipAnswer() } },
+                                    enabled = state.phase == QuizViewModel.Phase.ANSWERING,
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Icon(Icons.Default.PanTool, contentDescription = null)
+                                    Text(tr("I don't know"), modifier = Modifier.padding(start = 8.dp))
+                                }
                             }
                         }
-                    }
-                    AnimatedVisibility(
-                        visible = state.phase == QuizViewModel.Phase.SHOWING_FEEDBACK,
-                        enter = slideInVertically { it } + fadeIn(),
-                        modifier = Modifier.align(Alignment.BottomCenter),
-                    ) {
-                        FeedbackSheet(
-                            isCorrect = state.isCorrect == true,
-                            didSkip = state.didSkip,
-                            explanation = item.quiz.explanation,
-                            isLast = state.isLastQuestion,
-                            onContinue = { scope.launch { viewModel.continueToNext() } },
-                        )
+                        AnimatedVisibility(
+                            visible = state.phase == QuizViewModel.Phase.SHOWING_FEEDBACK,
+                            enter = slideInVertically { it } + fadeIn(),
+                            modifier = Modifier.align(Alignment.BottomCenter),
+                        ) {
+                            FeedbackSheet(
+                                isCorrect = state.isCorrect == true,
+                                didSkip = state.didSkip,
+                                explanation = item.quiz.explanation,
+                                isLast = state.isLastQuestion,
+                                onContinue = { scope.launch { viewModel.continueToNext() } },
+                            )
+                        }
                     }
                 }
             }
@@ -339,22 +359,15 @@ private fun FeedbackSheet(
         Button(
             onClick = onContinue,
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (isCorrect) Color(0xFF34C759) else MaterialTheme.colorScheme.primary,
+            ),
         ) {
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(
-                        Brush.horizontalGradient(
-                            if (isCorrect) listOf(Color(0xFF34C759), Color(0xFF30D158))
-                            else listOf(MaterialTheme.colorScheme.primary, OrangeAccent),
-                        ),
-                    )
-                    .padding(16.dp),
-            ) {
-                Text(if (isLast) "See Results" else "Next Question", color = Color.White, fontWeight = FontWeight.SemiBold)
-            }
+            Text(
+                if (isLast) tr("See Results") else tr("Next Question"),
+                color = Color.White,
+                fontWeight = FontWeight.SemiBold,
+            )
         }
     }
 }

@@ -1,6 +1,8 @@
 package com.codewiz.wordloop.ui.library
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,6 +35,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.codewiz.wordloop.data.store.WordLoopStore
@@ -97,14 +102,34 @@ fun LibraryScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(tr("Library"), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-                IconButton(onClick = { menu = true }) {
-                    Icon(Icons.Default.FilterList, contentDescription = tr("All Statuses"))
-                }
-                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                    DropdownMenuItem(text = { Text(tr("All Statuses")) }, onClick = { filter = LibraryFilter.None; menu = false })
-                    DropdownMenuItem(text = { Text(tr("Recently Failed")) }, onClick = { filter = LibraryFilter.RecentlyFailed; menu = false })
-                    WordStatus.entries.filter { it != WordStatus.NEW }.forEach { status ->
-                        DropdownMenuItem(text = { Text(tr(status.displayName)) }, onClick = { filter = LibraryFilter.Status(status); menu = false })
+                Box {
+                    IconButton(onClick = { menu = true }) {
+                        Icon(
+                            Icons.Default.FilterList,
+                            contentDescription = tr("All Statuses"),
+                            tint = if (filter is LibraryFilter.None) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                MaterialTheme.colorScheme.primary
+                            },
+                        )
+                    }
+                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                        FilterMenuItem(tr("All Statuses"), filter is LibraryFilter.None) {
+                            filter = LibraryFilter.None
+                            menu = false
+                        }
+                        FilterMenuItem(tr("Recently Failed"), filter is LibraryFilter.RecentlyFailed) {
+                            filter = LibraryFilter.RecentlyFailed
+                            menu = false
+                        }
+                        WordStatus.entries.filter { it != WordStatus.NEW }.forEach { status ->
+                            val selected = currentFilter is LibraryFilter.Status && currentFilter.status == status
+                            FilterMenuItem(tr(status.displayName), selected) {
+                                filter = LibraryFilter.Status(status)
+                                menu = false
+                            }
+                        }
                     }
                 }
             }
@@ -117,7 +142,7 @@ fun LibraryScreen(
                 }
             } else {
                 LazyColumn(
-                    contentPadding = PaddingValues(start = WlDesign.screenPadding, end = WlDesign.screenPadding, bottom = 120.dp),
+                    contentPadding = PaddingValues(start = WlDesign.screenPadding, end = WlDesign.screenPadding, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     item {
@@ -130,7 +155,13 @@ fun LibraryScreen(
                             singleLine = true,
                         )
                     }
-                    item { Text(tr("%lld active word(s) in your library", active), color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)) }
+                    item {
+                        Text(
+                            if (active == 1) "1 active word in your library"
+                            else "$active active words in your library",
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
+                        )
+                    }
                     if (languages.size > 1) {
                         item {
                             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -158,19 +189,45 @@ fun LibraryScreen(
                         items(filtered, key = { it.id }) { word ->
                             val dismissState = rememberSwipeToDismissBoxState(
                                 confirmValueChange = { value ->
-                                    if (value == SwipeToDismissBoxValue.EndToStart) {
-                                        scope.launch { store.deleteWord(word) }
-                                        true
-                                    } else if (value == SwipeToDismissBoxValue.StartToEnd) {
-                                        scope.launch {
-                                            if (word.wordStatus == WordStatus.ARCHIVED) store.unarchiveWord(word)
-                                            else store.archiveWord(word)
+                                    when (value) {
+                                        SwipeToDismissBoxValue.EndToStart -> {
+                                            scope.launch { store.deleteWord(word) }
+                                            true
                                         }
-                                        true
-                                    } else false
+                                        SwipeToDismissBoxValue.StartToEnd -> {
+                                            scope.launch {
+                                                if (word.wordStatus == WordStatus.ARCHIVED) store.unarchiveWord(word)
+                                                else store.archiveWord(word)
+                                            }
+                                            false
+                                        }
+                                        else -> false
+                                    }
                                 },
                             )
-                            SwipeToDismissBox(state = dismissState, backgroundContent = {}) {
+                            SwipeToDismissBox(
+                                state = dismissState,
+                                backgroundContent = {
+                                    val destination = dismissState.dismissDirection
+                                    val archiveLabel = if (word.wordStatus == WordStatus.ARCHIVED) tr("Unarchive") else tr("Archive")
+                                    val isDelete = destination == SwipeToDismissBoxValue.EndToStart
+                                    Box(
+                                        Modifier
+                                            .fillMaxSize()
+                                            .padding(vertical = 2.dp)
+                                            .clip(com.codewiz.wordloop.ui.theme.WlDesign.rowShape)
+                                            .background(if (isDelete) Color(0xFFFF3B30) else Color(0xFF007AFF))
+                                            .padding(horizontal = 20.dp),
+                                        contentAlignment = if (isDelete) Alignment.CenterEnd else Alignment.CenterStart,
+                                    ) {
+                                        Text(
+                                            if (isDelete) tr("Delete") else archiveLabel,
+                                            color = Color.White,
+                                            fontWeight = FontWeight.SemiBold,
+                                        )
+                                    }
+                                },
+                            ) {
                                 WordListRow(
                                     word = word,
                                     showsLanguage = languages.size > 1,
@@ -186,4 +243,17 @@ fun LibraryScreen(
             }
         }
     }
+}
+
+@Composable
+private fun FilterMenuItem(label: String, selected: Boolean, onClick: () -> Unit) {
+    DropdownMenuItem(
+        text = { Text(label) },
+        onClick = onClick,
+        trailingIcon = if (selected) {
+            { Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+        } else {
+            null
+        },
+    )
 }

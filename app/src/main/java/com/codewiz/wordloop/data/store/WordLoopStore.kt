@@ -317,9 +317,7 @@ class WordLoopStore @Inject constructor(
 
     suspend fun resetAllData() {
         runApi { api.resetUserData().also { it.throwIfFailed() } }
-        _words.value = emptyList()
-        _dueWords.value = emptyList()
-        _progress.value = null
+        refreshAll()
     }
 
     suspend fun deleteAccount() {

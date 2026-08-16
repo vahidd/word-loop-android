@@ -22,6 +22,13 @@ sealed class ApiError(
         get() = this is RateLimited || this is AiGenerationFailed || this is Network
 
     companion object {
+        private val didYouMean = Regex("""Did you mean ["“](.+?)["”]\?""")
+
+        fun suggestionFrom(explicit: String?, message: String): String? {
+            if (!explicit.isNullOrBlank()) return explicit
+            return didYouMean.find(message)?.groupValues?.getOrNull(1)
+        }
+
         fun fromBody(status: Int, body: ApiErrorBody?): ApiError {
             val detail = body?.error
             return when (status) {
@@ -30,7 +37,7 @@ sealed class ApiError(
                 422 -> if (detail?.code == "WORD_NOT_RECOGNIZED") {
                     WordNotRecognized(
                         detail = detail.message,
-                        suggestion = detail.suggestion,
+                        suggestion = suggestionFrom(detail.suggestion, detail.message),
                     )
                 } else {
                     Server(detail?.code.orEmpty(), detail?.message ?: "Unprocessable request")

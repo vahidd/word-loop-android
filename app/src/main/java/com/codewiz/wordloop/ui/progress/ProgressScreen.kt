@@ -67,7 +67,7 @@ fun ProgressScreen(store: WordLoopStore) {
     BoxWithBackground {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = WlDesign.screenPadding, end = WlDesign.screenPadding, top = WlDesign.screenPadding, bottom = 120.dp),
+            contentPadding = PaddingValues(start = WlDesign.screenPadding, end = WlDesign.screenPadding, top = WlDesign.screenPadding, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(WlDesign.sectionSpacing),
         ) {
             item {

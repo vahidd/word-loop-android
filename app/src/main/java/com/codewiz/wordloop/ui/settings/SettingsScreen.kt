@@ -8,6 +8,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -125,7 +126,7 @@ fun SettingsScreen(
     BoxWithBackground {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = WlDesign.screenPadding, end = WlDesign.screenPadding, top = WlDesign.screenPadding, bottom = 120.dp),
+            contentPadding = PaddingValues(start = WlDesign.screenPadding, end = WlDesign.screenPadding, top = WlDesign.screenPadding, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(WlDesign.sectionSpacing),
         ) {
             item { Text(tr("Settings"), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold) }
@@ -154,15 +155,17 @@ fun SettingsScreen(
             }
             item {
                 SettingsSection(tr("Language"), tr("Choose the language for menus, buttons, and other app text.")) {
-                    SettingsRow(Icons.Default.Language, Color(0xFF007AFF), tr("App Language"), trailing = {
-                        Text((AppUiLanguage.from(profile?.appLanguage) ?: AppUiLanguage.ENGLISH).pickerLabel, color = MaterialTheme.colorScheme.primary)
-                    }, onClick = { langMenu = true })
-                    DropdownMenu(expanded = langMenu, onDismissRequest = { langMenu = false }) {
-                        AppUiLanguage.entries.forEach { language ->
-                            DropdownMenuItem(text = { Text(language.pickerLabel) }, onClick = {
-                                langMenu = false
-                                onChangeLanguage(language)
-                            })
+                    Box {
+                        SettingsRow(Icons.Default.Language, Color(0xFF007AFF), tr("App Language"), trailing = {
+                            Text((AppUiLanguage.from(profile?.appLanguage) ?: AppUiLanguage.ENGLISH).pickerLabel, color = MaterialTheme.colorScheme.primary)
+                        }, onClick = { langMenu = true })
+                        DropdownMenu(expanded = langMenu, onDismissRequest = { langMenu = false }) {
+                            AppUiLanguage.entries.forEach { language ->
+                                DropdownMenuItem(text = { Text(language.pickerLabel) }, onClick = {
+                                    langMenu = false
+                                    onChangeLanguage(language)
+                                })
+                            }
                         }
                     }
                 }
@@ -216,19 +219,21 @@ fun SettingsScreen(
                     tr("Learning"),
                     tr("Standard allows review intervals to stretch to months; Intensive caps them at 14 days for more frequent practice. Changes take effect as each word comes up for review."),
                 ) {
-                    SettingsRow(Icons.Default.Psychology, Color(0xFF338CD6), tr("Review Mode"), trailing = {
-                        Text((profile?.reviewModeEnum ?: ReviewMode.STANDARD).name.lowercase().replaceFirstChar(Char::titlecase), color = MaterialTheme.colorScheme.primary)
-                    }, onClick = { modeMenu = true })
-                    DropdownMenu(expanded = modeMenu, onDismissRequest = { modeMenu = false }) {
-                        ReviewMode.entries.forEach { mode ->
-                            DropdownMenuItem(text = { Text(tr(mode.name.lowercase().replaceFirstChar(Char::titlecase))) }, onClick = {
-                                modeMenu = false
-                                scope.launch {
-                                    store.updateUserProfile(
-                                        com.codewiz.wordloop.data.api.UpdateUserProfileBody(reviewMode = mode.raw),
-                                    )
-                                }
-                            })
+                    Box {
+                        SettingsRow(Icons.Default.Psychology, Color(0xFF338CD6), tr("Review Mode"), trailing = {
+                            Text((profile?.reviewModeEnum ?: ReviewMode.STANDARD).name.lowercase().replaceFirstChar(Char::titlecase), color = MaterialTheme.colorScheme.primary)
+                        }, onClick = { modeMenu = true })
+                        DropdownMenu(expanded = modeMenu, onDismissRequest = { modeMenu = false }) {
+                            ReviewMode.entries.forEach { mode ->
+                                DropdownMenuItem(text = { Text(tr(mode.name.lowercase().replaceFirstChar(Char::titlecase))) }, onClick = {
+                                    modeMenu = false
+                                    scope.launch {
+                                        store.updateUserProfile(
+                                            com.codewiz.wordloop.data.api.UpdateUserProfileBody(reviewMode = mode.raw),
+                                        )
+                                    }
+                                })
+                            }
                         }
                     }
                 }
@@ -262,9 +267,14 @@ fun SettingsScreen(
                         Text("${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
                     })
                     SettingsRow(Icons.Default.Star, Color(0xFFFFCC00), tr("Rate Word Loop")) {
-                        runCatching {
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=${BuildConfig.APPLICATION_ID}")))
-                        }
+                        val market = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=${BuildConfig.APPLICATION_ID}"))
+                        val web = Intent(
+                            Intent.ACTION_VIEW,
+                            Uri.parse("https://play.google.com/store/apps/details?id=${BuildConfig.APPLICATION_ID}"),
+                        )
+                        runCatching { context.startActivity(market) }
+                            .recoverCatching { context.startActivity(web) }
+                            .onFailure { message = it.message }
                     }
                 }
             }

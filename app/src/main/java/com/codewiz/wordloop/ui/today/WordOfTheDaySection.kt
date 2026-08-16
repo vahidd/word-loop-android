@@ -52,6 +52,7 @@ fun WordOfTheDaySection(store: WordLoopStore, player: PronunciationPlayer) {
     var selectedId by remember { mutableStateOf(words.first().id) }
     val selected = words.firstOrNull { it.id == selectedId } ?: words.first()
     var phase by remember { mutableStateOf<String?>(null) }
+    var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val inLibrary = library.any { it.normalizedWord == selected.normalizedWord && it.language == selected.language }
 
@@ -114,10 +115,13 @@ fun WordOfTheDaySection(store: WordLoopStore, player: PronunciationPlayer) {
                 onClick = {
                     if (phase != null) return@Button
                     phase = "adding"
+                    error = null
                     scope.launch {
-                        val ok = runCatching { store.createWord(selected.word, selected.language) }.isSuccess ||
+                        val result = runCatching { store.createWord(selected.word, selected.language) }
+                        val ok = result.isSuccess ||
                             library.any { it.normalizedWord == selected.normalizedWord && it.language == selected.language }
                         if (!ok) {
+                            error = result.exceptionOrNull()?.message ?: "Couldn't add that word. Try again."
                             phase = null
                             return@launch
                         }
@@ -130,8 +134,9 @@ fun WordOfTheDaySection(store: WordLoopStore, player: PronunciationPlayer) {
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 if (phase == "adding") CircularProgressIndicator(Modifier.size(16.dp), color = Color.White, strokeWidth = 2.dp)
-                else Text(if (phase == "added") "Added" else "Learn this word")
+                else Text(if (phase == "added") tr("Added") else tr("Learn this word"))
             }
         }
+        error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
     }
 }
